@@ -43,12 +43,12 @@ int main()
     {
         PRINT_ERROR_AND_EXIT("Could not bind the socket");
     }
-
+    
     if(listen(server_file_descriptor, MAX_NR_REQUEST) < 0)
     {
         PRINT_ERROR_AND_EXIT("Could not start the listen process");
     }
-
+    
     client_file_descriptor = accept(server_file_descriptor, (struct sockaddr*)&socket_address, (socklen_t*)&socket_address_size);
     if(client_file_descriptor < 0)
     {
