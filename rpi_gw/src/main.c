@@ -49,6 +49,7 @@ int main()
         PRINT_ERROR_AND_EXIT("Could not start the listen process");
     }
 
+    printf("Waiting for a client to connect...\n");
     client_file_descriptor = accept(server_file_descriptor, (struct sockaddr*)&socket_address, (socklen_t*)&socket_address_size);
     if(client_file_descriptor < 0)
     {
@@ -59,6 +60,9 @@ int main()
     printf("Message sent to client\n");
     read(client_file_descriptor, received_msg, sizeof(received_msg)); 
     printf("Message from client: %s\n", received_msg);
+
+    close(client_file_descriptor);
+    shutdown(server_file_descriptor, SHUT_RDWR);
 
     return 0;
 }
