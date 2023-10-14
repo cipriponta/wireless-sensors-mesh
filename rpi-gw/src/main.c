@@ -1,19 +1,6 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/socket.h>
-#include <netinet/in.h> 
-#include <unistd.h>
+#include "socket_defs.h"
 
-#define PRINT_ERROR_AND_EXIT(MSG)               \
-do                                              \
-{                                               \
-    printf("%s\n", MSG);                        \
-    exit(1);                                    \
-} while (0)
-
-#define SOCKET_PORT 8080
-#define MAX_NR_REQUEST 1
-#define MSG_BUF 128
+// TODO: Review this file
 
 int main()
 {
@@ -36,8 +23,11 @@ int main()
     }
 
     socket_address.sin_family = AF_INET;
-    socket_address.sin_addr.s_addr = INADDR_ANY;
     socket_address.sin_port = htons(SOCKET_PORT);
+    if(0 != inet_pton(AF_INET, SERVER_IP_ADDRESS, socket_address.sin_addr.s_addr))
+    {
+        PRINT_ERROR_AND_EXIT("Could not set the ip address of the server");
+    }
 
     if(bind(server_file_descriptor, (struct sockaddr*)&socket_address, socket_address_size) < 0)
     {

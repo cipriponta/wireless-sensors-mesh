@@ -4,8 +4,12 @@ project(common)
 
 set(
     HEADER_FILES
-    socket_defs.h
+    socket_helpers.h
 )
 
-add_library(${PROJECT_NAME} STATIC ${HEADER_FILES})
-set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE CXX)
+set(
+    SOURCE_FILES
+    socket_helpers.c
+)
+
+add_library(${PROJECT_NAME} STATIC ${HEADER_FILES} ${SOURCE_FILES})
