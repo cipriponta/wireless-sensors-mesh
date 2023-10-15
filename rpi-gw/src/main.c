@@ -44,7 +44,7 @@ int main()
 
     send(client_file_descriptor, sent_msg, sizeof(sent_msg), 0);
     printf("Message sent to client\n");
-    read(client_file_descriptor, received_msg, sizeof(received_msg)); 
+    recv(client_file_descriptor, received_msg, sizeof(received_msg), 0); 
     printf("Message from client: %s\n", received_msg);
 
     close(client_file_descriptor);
