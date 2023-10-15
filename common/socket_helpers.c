@@ -27,7 +27,9 @@ int receive_data(int socket_file_descriptor, char *buffer, int buffer_max_size)
     {
         strcpy(chunk, "");
         chunk_size_recv = recv(socket_file_descriptor, chunk, sizeof(chunk), 0);
-        printf("Chunk size recv: %d, chunk: %s\n", chunk_size_recv, chunk);
+
+        // printf("Chunk size recv: %d, chunk: %s\n", chunk_size_recv, chunk);
+
         if(chunk_size_recv < 0)
         {
             printf("Could not receive data properly\n");
