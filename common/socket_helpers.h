@@ -23,6 +23,8 @@ do                                              \
 #define PING_COMMAND                "ping"
 #define HARDCODED_SYSTEM_STATS      "Temperature: 21.5'C, Gas: 0.0"
 
+#define PING_COMMAND        "ping"
+
 int set_server_address(struct sockaddr_in *server_socket_address);
 int receive_data(int socket_file_descriptor, char *buffer, int buffer_max_size);
 
