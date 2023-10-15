@@ -15,11 +15,13 @@ do                                              \
     exit(1);                                    \
 } while (0)
 
-#define SERVER_IP_ADDRESS   "192.168.0.106"
-#define SOCKET_PORT         (8080)
-#define MAX_NR_REQUEST      (1)
-#define CHUNK_BUF_SIZE      (128)
-#define MSG_BUF_SIZE        (128)
+#define SERVER_IP_ADDRESS           "192.168.0.106"
+#define SOCKET_PORT                 (8080)
+#define MAX_NR_REQUEST              (1)
+#define CHUNK_BUF_SIZE              (128)
+#define MSG_BUF_SIZE                (128)
+#define PING_COMMAND                "ping"
+#define HARDCODED_SYSTEM_STATS      "Temperature: 21.5'C, Gas: 0.0"
 
 int set_server_address(struct sockaddr_in *server_socket_address);
 int receive_data(int socket_file_descriptor, char *buffer, int buffer_max_size);

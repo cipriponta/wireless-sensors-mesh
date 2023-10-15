@@ -42,14 +42,27 @@ int main()
         PRINT_ERROR_AND_EXIT("Could not connect to the client socket");
     }
     
-    if(0 == receive_data(client_file_descriptor, received_msg, MSG_BUF_SIZE))
+    while(1)
     {
-        PRINT_ERROR_AND_EXIT("Could not receive data from client");
+        if(0 == receive_data(client_file_descriptor, received_msg, MSG_BUF_SIZE))
+        {
+            printf("Could not receive data from client\n");
+        }
+
+        if(0 == strcmp(received_msg, PING_COMMAND))
+        {
+            if(send(client_file_descriptor, HARDCODED_SYSTEM_STATS, MSG_BUF_SIZE, 0) < 0)
+            {
+                printf("Could not send data to client\n");
+            }
+            else
+            {
+                printf("System stats sent to client successfully\n");
+            }
+        }
     }
-    printf("Message from client: %s\n", received_msg);
 
     close(client_file_descriptor);
     shutdown(server_file_descriptor, SHUT_RDWR);
-
     return 0;
 }
