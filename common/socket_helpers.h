@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/socket.h>
 #include <netinet/in.h> 
 #include <unistd.h>
@@ -17,8 +18,10 @@ do                                              \
 #define SERVER_IP_ADDRESS   "192.168.0.106"
 #define SOCKET_PORT         (8080)
 #define MAX_NR_REQUEST      (1)
-#define MSG_BUF             (128)
+#define CHUNK_BUF_SIZE      (128)
+#define MSG_BUF_SIZE        (128)
 
 int set_server_address(struct sockaddr_in *server_socket_address);
+int receive_data(int socket_file_descriptor, char *buffer, int buffer_max_size);
 
 #endif
