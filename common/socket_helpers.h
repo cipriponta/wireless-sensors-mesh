@@ -21,6 +21,8 @@ do                                              \
 #define CHUNK_BUF_SIZE      (128)
 #define MSG_BUF_SIZE        (128)
 
+#define PING_COMMAND        "ping"
+
 int set_server_address(struct sockaddr_in *server_socket_address);
 int receive_data(int socket_file_descriptor, char *buffer, int buffer_max_size);
 

@@ -1,12 +1,11 @@
 #include "socket_helpers.h"
 
-
 int main()
 {
     int client_file_descriptor;
     struct sockaddr_in server_address;
     char *sent_msg = "Hello from client";
-    char received_msg[MSG_BUF];
+    char system_stats[MSG_BUF_SIZE];
 
     client_file_descriptor = socket(AF_INET, SOCK_STREAM, 0);
     if(client_file_descriptor < 0)
@@ -24,10 +23,28 @@ int main()
         PRINT_ERROR_AND_EXIT("Could not connect to the server");
     }
 
-    send(client_file_descriptor, sent_msg, sizeof(sent_msg), 0);
-    printf("Message sent to server\n");
-    recv(client_file_descriptor, received_msg, sizeof(received_msg), 0);
-    printf("Message from server:%s\n", received_msg);
 
+    while(1)
+    {
+        if(send(client_file_descriptor, PING_COMMAND, MSG_BUF_SIZE, 0) < 0)
+        {
+            printf("Could not send data to client\n");
+        }
+        else
+        {
+            if(0 == receive_data(client_file_descriptor, system_stats, MSG_BUF_SIZE))
+            {
+                printf("Could not receive data from client\n");
+            }
+            else
+            {
+                printf("System stats: %s\n", system_stats);
+            }
+        }
+        
+        sleep(1);
+    }
+    
+    shutdown(client_file_descriptor, SHUT_RDWR);
     return 0;
 }
