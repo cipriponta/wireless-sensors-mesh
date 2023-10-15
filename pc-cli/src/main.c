@@ -26,7 +26,7 @@ int main()
 
     send(client_file_descriptor, sent_msg, sizeof(sent_msg), 0);
     printf("Message sent to server\n");
-    read(client_file_descriptor, received_msg, sizeof(received_msg));
+    recv(client_file_descriptor, received_msg, sizeof(received_msg), 0);
     printf("Message from server:%s\n", received_msg);
 
     return 0;

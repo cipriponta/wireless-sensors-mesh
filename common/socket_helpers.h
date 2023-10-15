@@ -14,7 +14,7 @@ do                                              \
     exit(1);                                    \
 } while (0)
 
-#define SERVER_IP_ADDRESS   "192.168.0.194"
+#define SERVER_IP_ADDRESS   "192.168.0.106"
 #define SOCKET_PORT         (8080)
 #define MAX_NR_REQUEST      (1)
 #define MSG_BUF             (128)
