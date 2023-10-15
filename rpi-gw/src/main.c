@@ -6,7 +6,7 @@ int main()
     int option = 1; 
     struct sockaddr_in server_socket_address;
     int server_socket_address_size = sizeof(server_socket_address);
-    char received_msg[MSG_BUF];
+    char received_msg[MSG_BUF_SIZE];
     char *sent_msg = "Hello from server";
 
     server_file_descriptor = socket(AF_INET, SOCK_STREAM, 0);
@@ -41,14 +41,28 @@ int main()
     {
         PRINT_ERROR_AND_EXIT("Could not connect to the client socket");
     }
+    
+    while(1)
+    {
+        if(0 == receive_data(client_file_descriptor, received_msg, MSG_BUF_SIZE))
+        {
+            printf("Could not receive data from client\n");
+        }
 
-    send(client_file_descriptor, sent_msg, sizeof(sent_msg), 0);
-    printf("Message sent to client\n");
-    read(client_file_descriptor, received_msg, sizeof(received_msg)); 
-    printf("Message from client: %s\n", received_msg);
+        if(0 == strcmp(received_msg, PING_COMMAND))
+        {
+            if(send(client_file_descriptor, HARDCODED_SYSTEM_STATS, MSG_BUF_SIZE, 0) < 0)
+            {
+                printf("Could not send data to client\n");
+            }
+            else
+            {
+                printf("System stats sent to client successfully\n");
+            }
+        }
+    }
 
     close(client_file_descriptor);
     shutdown(server_file_descriptor, SHUT_RDWR);
-
     return 0;
 }
