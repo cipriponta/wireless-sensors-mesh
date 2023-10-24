@@ -1,3 +1,7 @@
 /rpi-gw/out
 /pc-cli/out
 .vscode
+/esp32-tmp/build/*
+/esp32-tmp/sdkconfig
+/esp32-gas/build/*
+/esp32-gas/sdkconfig
