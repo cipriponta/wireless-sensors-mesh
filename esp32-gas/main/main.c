@@ -50,7 +50,6 @@ struct gatts_profile_instance_t {
     esp_gatts_cb_t gatts_cb;
     uint16_t gatts_if;
     uint16_t app_id;
-    uint16_t conn_id;
     uint16_t service_handle;
     esp_gatt_srvc_id_t service_id;
     uint16_t char_handle;
@@ -124,7 +123,7 @@ esp_ble_adv_params_t adv_params = {
 
 uint8_t adv_config_done = 0;
 
-uint8_t ble_reported_value[] = {'a', 'b', 'c'};
+uint8_t ble_reported_value[] = BLE_DEVICE_NAME;
 
 esp_attr_value_t gatts_char_value =
 {
@@ -140,10 +139,10 @@ void app_main(void)
 
     while(1)
     {
-        ESP_ERROR_CHECK(adc_oneshot_read(adc_handle, GAS_ADC_CHANNEL, &adc_raw_value));
-        ESP_ERROR_CHECK(adc_cali_raw_to_voltage(adc_cali_handle, adc_raw_value, &adc_voltage));
-        adc_scaled_voltage = SCALE_TO_5V(adc_voltage);
-        ESP_LOGI(TAG, "ADC raw value: %d, ADC voltage value: %f mV", adc_raw_value, adc_scaled_voltage);
+        // ESP_ERROR_CHECK(adc_oneshot_read(adc_handle, GAS_ADC_CHANNEL, &adc_raw_value));
+        // ESP_ERROR_CHECK(adc_cali_raw_to_voltage(adc_cali_handle, adc_raw_value, &adc_voltage));
+        // adc_scaled_voltage = SCALE_TO_5V(adc_voltage);
+        // ESP_LOGI(TAG, "ADC raw value: %d, ADC voltage value: %f mV", adc_raw_value, adc_scaled_voltage);
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
@@ -209,27 +208,6 @@ void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts
                                                     NULL));
             break;
         }
-        case ESP_GATTS_ADD_CHAR_EVT:
-        {
-            ESP_LOGI(TAG, "Created characteristic, status: %d, attribute_handle: %d, service_handle: %d", 
-                        param->add_char.status, param->add_char.attr_handle, param->add_char.service_handle);
-            gatts_profile_instance.char_handle = param->add_char.attr_handle;
-            gatts_profile_instance.desc_uuid.len = ESP_UUID_LEN_16;
-            gatts_profile_instance.desc_uuid.uuid.uuid16 = ESP_GATT_UUID_CHAR_CLIENT_CONFIG;
-
-            uint16_t recv_buff_length = 0;
-            const uint8_t *recv_buff;
-            ESP_ERROR_CHECK(esp_ble_gatts_get_attr_value(gatts_profile_instance.char_handle, &recv_buff_length, &recv_buff));
-            ESP_LOGI(TAG, "Characteristic: ");
-            ESP_LOG_BUFFER_CHAR(TAG, recv_buff, recv_buff_length);
-
-            ESP_ERROR_CHECK(esp_ble_gatts_add_char_descr(gatts_profile_instance.service_handle, 
-                                                         &gatts_profile_instance.desc_uuid,
-                                                         ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE,
-                                                         NULL, 
-                                                         NULL));
-            break;
-        }
         case ESP_GATTS_CONNECT_EVT:
         {
             esp_ble_conn_update_params_t conn_params = {0};
@@ -248,7 +226,6 @@ void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts
                     param->connect.remote_bda[4],  
                     param->connect.remote_bda[5]);
 
-            gatts_profile_instance.conn_id = param->connect.conn_id;
             ESP_ERROR_CHECK(esp_ble_gap_update_conn_params(&conn_params));
             break;
         }

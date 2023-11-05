@@ -8,3 +8,4 @@
     - Connect the fan and add its functionality
 3. ESP32-SENSORS
     - Create a esp32-common directory
+    - The esp32-common folder should contain adc and ble drivers
