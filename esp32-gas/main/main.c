@@ -35,9 +35,9 @@
 
 #define BLE_GATTS_PROFILE_ID                (0x0000)
 #define BLE_GATTS_SERVICE_UUID              (0xFFCC)
-#define BLE_GATTS_SERVICE_HANDLE            (0x0000)
+#define BLE_GATTS_SERVICE_NUM_HANDLES       (0x0004)
 #define BLE_GATTS_CHAR_UUID                 (0xFFCD)
-#define BLE_GATTS_CHAR_MAX_LEN              (4 * sizeof(int))
+#define BLE_GATTS_CHAR_MAX_LEN              (256 * sizeof(int))
 
 #define GAS_ADC_UNIT                        (ADC_UNIT_2)
 #define GAS_ADC_CHANNEL                     (ADC_CHANNEL_7)
@@ -118,21 +118,19 @@ esp_ble_adv_params_t adv_params = {
     .adv_int_max        = BLE_ADV_MAX_INTERVAL,
     .adv_type           = ADV_TYPE_IND,
     .own_addr_type      = BLE_ADDR_TYPE_PUBLIC,
-    //.peer_addr        =
-    //.peer_addr_type   =
     .channel_map        = ADV_CHNL_ALL,
     .adv_filter_policy  = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
 };
 
 uint8_t adv_config_done = 0;
 
-uint8_t ble_reported_value = 0x99;
+uint8_t ble_reported_value[] = {'a', 'b', 'c'};
 
 esp_attr_value_t gatts_char_value =
 {
     .attr_max_len = BLE_GATTS_CHAR_MAX_LEN,
     .attr_len     = sizeof(ble_reported_value),
-    .attr_value   = &ble_reported_value,
+    .attr_value   = ble_reported_value,
 };
 
 void app_main(void)
@@ -177,6 +175,7 @@ void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts
     switch(event)
     {
         case ESP_GATTS_REG_EVT:
+        {
             ESP_LOGI(TAG, "BLE Register App Event, status: %d, app_id: %d", param->reg.status, param->reg.app_id);
 
             gatts_profile_instance.service_id.is_primary = true;
@@ -184,32 +183,89 @@ void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts
             gatts_profile_instance.service_id.id.uuid.len = ESP_UUID_LEN_16;
             gatts_profile_instance.service_id.id.uuid.uuid.uuid16 = BLE_GATTS_SERVICE_UUID;
 
-            esp_ble_gap_set_device_name(BLE_DEVICE_NAME);
+            ESP_ERROR_CHECK(esp_ble_gap_set_device_name(BLE_DEVICE_NAME));
 
             ESP_ERROR_CHECK(esp_ble_gap_config_adv_data(&adv_data));
             adv_config_done |= BLE_ADV_CONFIG_FLAG;
             ESP_ERROR_CHECK(esp_ble_gap_config_adv_data(&scan_rsp_data));
             adv_config_done |= BLE_ADV_SCAN_RSP_CONFIG_FLAG;
 
-            esp_ble_gatts_create_service(gatts_if, &gatts_profile_instance.service_id, BLE_GATTS_SERVICE_HANDLE);
+            ESP_ERROR_CHECK(esp_ble_gatts_create_service(gatts_if, &gatts_profile_instance.service_id, BLE_GATTS_SERVICE_NUM_HANDLES));
 
             break;
+        }
         case ESP_GATTS_CREATE_EVT:
         {   
             ESP_LOGI(TAG, "Created service, status: %d, service_handle: %d", param->create.status, param->create.service_handle);
             gatts_profile_instance.service_handle = param->create.service_handle;
             gatts_profile_instance.char_uuid.len = ESP_UUID_LEN_16;
             gatts_profile_instance.char_uuid.uuid.uuid16 = BLE_GATTS_CHAR_UUID;
-            esp_ble_gatts_start_service(gatts_profile_instance.service_handle);
-
-            esp_gatt_char_prop_t property = ESP_GATT_CHAR_PROP_BIT_READ;
+            ESP_ERROR_CHECK(esp_ble_gatts_start_service(gatts_profile_instance.service_handle));
             ESP_ERROR_CHECK(esp_ble_gatts_add_char(gatts_profile_instance.service_handle, 
                                                     &gatts_profile_instance.char_uuid, 
                                                     ESP_GATT_PERM_READ, 
-                                                    property, 
+                                                    ESP_GATT_CHAR_PROP_BIT_READ, 
                                                     &gatts_char_value,
                                                     NULL));
             break;
+        }
+        case ESP_GATTS_ADD_CHAR_EVT:
+        {
+            ESP_LOGI(TAG, "Created characteristic, status: %d, attribute_handle: %d, service_handle: %d", 
+                        param->add_char.status, param->add_char.attr_handle, param->add_char.service_handle);
+            gatts_profile_instance.char_handle = param->add_char.attr_handle;
+            gatts_profile_instance.desc_uuid.len = ESP_UUID_LEN_16;
+            gatts_profile_instance.desc_uuid.uuid.uuid16 = ESP_GATT_UUID_CHAR_CLIENT_CONFIG;
+
+            uint16_t recv_buff_length = 0;
+            const uint8_t *recv_buff;
+            ESP_ERROR_CHECK(esp_ble_gatts_get_attr_value(gatts_profile_instance.char_handle, &recv_buff_length, &recv_buff));
+            ESP_LOGI(TAG, "Characteristic: ");
+            ESP_LOG_BUFFER_CHAR(TAG, recv_buff, recv_buff_length);
+
+            ESP_ERROR_CHECK(esp_ble_gatts_add_char_descr(gatts_profile_instance.service_handle, 
+                                                         &gatts_profile_instance.desc_uuid,
+                                                         ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE,
+                                                         NULL, 
+                                                         NULL));
+            break;
+        }
+        case ESP_GATTS_CONNECT_EVT:
+        {
+            esp_ble_conn_update_params_t conn_params = {0};
+            memcpy(conn_params.bda, param->connect.remote_bda, sizeof(esp_bd_addr_t));
+            conn_params.latency = 0;
+            conn_params.max_int = 0x30;
+            conn_params.min_int = 0x10;
+            conn_params.timeout = 400;
+
+            ESP_LOGI(TAG, "Connection event: conn_id: %d, remote: %02x:%02x:%02x:%02x:%02x:%02x",
+                    param->connect.conn_id,  
+                    param->connect.remote_bda[0],  
+                    param->connect.remote_bda[1],  
+                    param->connect.remote_bda[2],  
+                    param->connect.remote_bda[3],  
+                    param->connect.remote_bda[4],  
+                    param->connect.remote_bda[5]);
+
+            gatts_profile_instance.conn_id = param->connect.conn_id;
+            ESP_ERROR_CHECK(esp_ble_gap_update_conn_params(&conn_params));
+            break;
+        }
+        case ESP_GATTS_READ_EVT:
+        {
+            ESP_LOGI(TAG, "Read event: conn_id: %d, trans_id: %ld, handle: %d",  
+                     param->read.conn_id, param->read.trans_id, param->read.handle); 
+
+            esp_gatt_rsp_t response;
+            memset(&response, 0, sizeof(esp_gatt_rsp_t));
+            response.attr_value.handle = param->read.handle;
+            response.attr_value.len = 3;
+            response.attr_value.value[0] = 'a';
+            response.attr_value.value[1] = 'b';
+            response.attr_value.value[2] = 'c';
+
+            ESP_ERROR_CHECK(esp_ble_gatts_send_response(gatts_if, param->read.conn_id, param->read.trans_id, ESP_GATT_OK, &response));
         }
             
         default:
