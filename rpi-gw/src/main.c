@@ -1,4 +1,5 @@
 #include "socket_helpers.h"
+#include "gattlib.h"
 
 int main()
 {
