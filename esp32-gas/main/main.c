@@ -6,10 +6,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#include "esp_adc/adc_oneshot.h"
-#include "esp_adc/adc_cali.h"
-#include "esp_adc/adc_cali_scheme.h"
-
 #include "esp_system.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
@@ -21,10 +17,12 @@
 #include "esp_gatts_api.h"
 #include "esp_gatt_common_api.h"
 
+#include "adc_driver.h"
+
 #include "sdkconfig.h"
 
-#define TAG                                 "ESP32-GAS"
 #define BLE_DEVICE_NAME                     "ESP32-GAS-SENSOR"
+#define TAG                                 "ESP32-GAS"
 
 #define BLE_ADV_CONFIG_FLAG                 (1 << 0)
 #define BLE_ADV_SCAN_RSP_CONFIG_FLAG        (1 << 1)
@@ -38,13 +36,6 @@
 #define BLE_GATTS_SERVICE_NUM_HANDLES       (0x0004)
 #define BLE_GATTS_CHAR_UUID                 (0xFFCD)
 #define BLE_GATTS_CHAR_MAX_LEN              (256 * sizeof(int))
-
-#define GAS_ADC_UNIT                        (ADC_UNIT_2)
-#define GAS_ADC_CHANNEL                     (ADC_CHANNEL_7)
-#define GAS_ADC_ATTEN                       (ADC_ATTEN_DB_11)
-#define GAS_ADC_BITWIDTH                    (ADC_BITWIDTH_DEFAULT)
-
-#define SCALE_TO_5V(VOLTAGE_3V3) ((float)VOLTAGE_3V3 * (5000.0 / 3300.0))
 
 struct gatts_profile_instance_t {
     esp_gatts_cb_t gatts_cb;
@@ -64,13 +55,20 @@ void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts
 void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param);
 void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param);
 void ble_init(void);
-void adc_init(void);
 
-adc_oneshot_unit_handle_t adc_handle;
-adc_cali_handle_t adc_cali_handle;
-int adc_raw_value;
-int adc_voltage;
-float adc_scaled_voltage;
+adc_driver_config_t adc_config = {
+    .handle = 0,
+    .cali_handle = 0,
+    .unit = ADC_UNIT_2,
+    .channel = ADC_CHANNEL_7,
+    .attenuation = ADC_ATTEN_DB_11,
+    .bitwidth = ADC_BITWIDTH_DEFAULT,
+};
+
+adc_driver_value_t adc_value = {
+    .raw_value = 0,
+    .voltage = 0,
+};
 
 struct gatts_profile_instance_t gatts_profile_instance = {
     .gatts_cb = gatts_profile_event_handler,
@@ -135,14 +133,12 @@ esp_attr_value_t gatts_char_value =
 void app_main(void)
 {
     ble_init();
-    adc_init();
+    adc_init(&adc_config);
 
     while(1)
     {
-        // ESP_ERROR_CHECK(adc_oneshot_read(adc_handle, GAS_ADC_CHANNEL, &adc_raw_value));
-        // ESP_ERROR_CHECK(adc_cali_raw_to_voltage(adc_cali_handle, adc_raw_value, &adc_voltage));
-        // adc_scaled_voltage = SCALE_TO_5V(adc_voltage);
-        // ESP_LOGI(TAG, "ADC raw value: %d, ADC voltage value: %f mV", adc_raw_value, adc_scaled_voltage);
+        adc_read(&adc_config, &adc_value);
+        ESP_LOGI(TAG, "Voltage value: %d", adc_value.voltage);
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
@@ -299,25 +295,4 @@ void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
         default:
             break;
     }
-}
-
-void adc_init(void)
-{
-    adc_oneshot_unit_init_cfg_t adc_init_cfg = {
-        .unit_id = GAS_ADC_UNIT,
-    };
-    ESP_ERROR_CHECK(adc_oneshot_new_unit(&adc_init_cfg, &adc_handle));
-
-    adc_oneshot_chan_cfg_t adc_channel_cfg = {
-        .atten = GAS_ADC_ATTEN,
-        .bitwidth = GAS_ADC_BITWIDTH,
-    };
-    ESP_ERROR_CHECK(adc_oneshot_config_channel(adc_handle, GAS_ADC_CHANNEL, &adc_channel_cfg));
-
-    adc_cali_line_fitting_config_t adc_cali_cfg = {
-        .unit_id = GAS_ADC_UNIT,
-        .atten = GAS_ADC_ATTEN,
-        .bitwidth = GAS_ADC_BITWIDTH,
-    };
-    ESP_ERROR_CHECK(adc_cali_create_scheme_line_fitting(&adc_cali_cfg, &adc_cali_handle));
 }
