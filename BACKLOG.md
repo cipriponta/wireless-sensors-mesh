@@ -4,8 +4,7 @@
 2. RPI-GW
     - Connect via BLE to the ESP32-SENSORS
     - Secure the TCP connection between PC-GUI and RPI-GW
-    - Secure the BLE connection
+    - Secure the BLE connection between RPI-GW and the ESP-32 components
     - Connect the fan and add its functionality
 3. ESP32-SENSORS
-    - Create a esp32-common directory
-    - The esp32-common folder should contain adc and ble drivers
+    - Add the drivers to ESP32-TEMP-SENSOR
