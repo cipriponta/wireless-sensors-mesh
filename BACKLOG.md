@@ -8,3 +8,4 @@
     - Connect the fan and add its functionality
 3. ESP32-SENSORS
     - Add the drivers to ESP32-TMP-SENSOR
+    - Add the disconnect event
