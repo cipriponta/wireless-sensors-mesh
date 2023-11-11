@@ -29,6 +29,7 @@ typedef struct
     uint8_t adv_service_uuid128[16];
     uint16_t gatts_profile_id;
     char *device_name;
+    void (*response_cb)(uint8_t *response_value, uint16_t *response_len);
 } ble_driver_cfg_t;
 
 void ble_init(ble_driver_cfg_t *ble_cfg);

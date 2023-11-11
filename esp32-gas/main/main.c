@@ -15,6 +15,8 @@
              
 #define TAG "ESP32-GAS"
 
+void ble_response_cb(uint8_t *response_value, uint16_t *response_len);
+
 adc_driver_config_t adc_config = {
     .handle = 0,
     .cali_handle = 0,
@@ -35,18 +37,27 @@ ble_driver_cfg_t ble_cfg = {
         // Human readable form: 86CBC57E-9993-4DE2-AE26-E2497E98EF7E
         0x7E, 0xEF, 0x98, 0x7E, 0x49, 0xE2, 0x26, 0xAE, 0xE2, 0x4D, 0x93, 0x99, 0x7E, 0xC5, 0xCB, 0x86,
     },
-    .device_name = "ESP32-GAS-SENSOR"
+    .device_name = "ESP32-GAS-SENSOR",
+    .response_cb = ble_response_cb,
 };
 
 void app_main(void)
 {
-    ble_init(&ble_cfg);
     adc_init(&adc_config);
+    ble_init(&ble_cfg);
 
     while(1)
     {
-        adc_read(&adc_config, &adc_value);
-        ESP_LOGI(TAG, "Voltage value: %d", adc_value.voltage);
+        // Idle main task
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
+}
+
+void ble_response_cb(uint8_t *response_value, uint16_t* response_len)
+{
+    char buffer[ESP_GATT_MAX_ATTR_LEN];
+    adc_read(&adc_config, &adc_value);
+    sprintf(buffer, "%04d", adc_value.raw_value);
+    memcpy(response_value, buffer, ESP_GATT_MAX_ATTR_LEN * sizeof(char));
+    *response_len = strlen(buffer);
 }

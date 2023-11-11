@@ -226,12 +226,9 @@ static void gatts_profile_sensor_event_handler(esp_gatts_cb_event_t event, esp_g
 
             esp_gatt_rsp_t response;
             memset(&response, 0, sizeof(esp_gatt_rsp_t));
-            response.attr_value.handle = param->read.handle;
-            response.attr_value.len = 3;
-            response.attr_value.value[0] = 'a';
-            response.attr_value.value[1] = 'b';
-            response.attr_value.value[2] = 'c';
 
+            ble_cfg_instance.response_cb(&response.attr_value.value, &response.attr_value.len);
+            ESP_LOGI(BLE_LOG_TAG, "Value from ADC: %s", (char*)response.attr_value.value);
             ESP_ERROR_CHECK(esp_ble_gatts_send_response(gatts_if, param->read.conn_id, param->read.trans_id, ESP_GATT_OK, &response));
         }
             
