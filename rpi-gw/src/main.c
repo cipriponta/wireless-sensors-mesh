@@ -1,14 +1,4 @@
 #include "socket_helpers.h"
-#include "gattlib.h"
-
-#define BLE_MAC_ESP32_GAS_SENSOR            "78:E3:6D:19:43:1A"
-#define BLE_MAC_ESP32_TMP_SENSOR            "A8:42:E3:48:32:2E"
-#define BLE_SENSOR_VALUE_CHAR_UUID          "FFCD"
-
-void ble_conn_init(char *ble_mac);
-void ble_read(char *ble_mac);
-
-static uuid_t sensor_value_uuid;
 
 int main()
 {
