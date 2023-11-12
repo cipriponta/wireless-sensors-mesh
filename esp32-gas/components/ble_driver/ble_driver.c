@@ -227,11 +227,17 @@ static void gatts_profile_sensor_event_handler(esp_gatts_cb_event_t event, esp_g
             esp_gatt_rsp_t response;
             memset(&response, 0, sizeof(esp_gatt_rsp_t));
 
-            ble_cfg_instance.response_cb(&response.attr_value.value, &response.attr_value.len);
+            ble_cfg_instance.response_cb(response.attr_value.value, &response.attr_value.len);
             ESP_LOGI(BLE_LOG_TAG, "Value from ADC: %s", (char*)response.attr_value.value);
             ESP_ERROR_CHECK(esp_ble_gatts_send_response(gatts_if, param->read.conn_id, param->read.trans_id, ESP_GATT_OK, &response));
+            break;
         }
-            
+        case ESP_GATTS_DISCONNECT_EVT:
+        {
+            ESP_LOGI(BLE_LOG_TAG, "Disconnect event, reason: 0x%x", param->disconnect.reason);
+            esp_ble_gap_start_advertising(&adv_params);
+            break;
+        }
         default:
             break;
     }

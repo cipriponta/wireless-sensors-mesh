@@ -45,12 +45,6 @@ void app_main(void)
 {
     adc_init(&adc_config);
     ble_init(&ble_cfg);
-
-    while(1)
-    {
-        // Idle main task
-        vTaskDelay(pdMS_TO_TICKS(1000));
-    }
 }
 
 void ble_response_cb(uint8_t *response_value, uint16_t* response_len)
