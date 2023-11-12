@@ -43,6 +43,7 @@ ble_driver_cfg_t ble_cfg = {
 
 void app_main(void)
 {
+    ESP_LOGI(TAG, "Welcome");
     adc_init(&adc_config);
     ble_init(&ble_cfg);
 }
