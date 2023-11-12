@@ -7,5 +7,3 @@
     - Secure the BLE connection between RPI-GW and the ESP-32 components
     - Connect the fan and add its functionality
 3. ESP32-SENSORS
-    - Add the drivers to ESP32-TMP-SENSOR
-    - Add the disconnect event
