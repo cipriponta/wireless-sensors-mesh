@@ -1,4 +1,5 @@
 #include "socket_helpers.h"
+#include "ble_driver.h"
 
 int main()
 {
@@ -7,7 +8,14 @@ int main()
     struct sockaddr_in server_socket_address;
     int server_socket_address_size = sizeof(server_socket_address);
     char received_msg[MSG_BUF_SIZE];
-    char *sent_msg = "Hello from server";
+
+    int gas_sensor_value_handle = 0;
+    int tmp_sensor_value_handle = 0;
+
+    ble_get_sensor_value_char_handle(BLE_MAC_ESP32_GAS_SENSOR, BLE_SENSOR_VALUE_UUID, &gas_sensor_value_handle);
+    printf("BLE Gas Sensor Handle: %d\n", gas_sensor_value_handle);
+    ble_get_sensor_value_char_handle(BLE_MAC_ESP32_TMP_SENSOR, BLE_SENSOR_VALUE_UUID, &tmp_sensor_value_handle);
+    printf("BLE Temperature Sensor Handle: %d\n", tmp_sensor_value_handle);
 
     server_file_descriptor = socket(AF_INET, SOCK_STREAM, 0);
     if(server_file_descriptor < 0)
@@ -22,7 +30,7 @@ int main()
 
     if(0 == set_server_address(&server_socket_address))
     {
-         PRINT_ERROR_AND_EXIT("Could not set the ip address of the server");
+        PRINT_ERROR_AND_EXIT("Could not set the ip address of the server");
     }
 
     if(bind(server_file_descriptor, (struct sockaddr*)&server_socket_address, server_socket_address_size) < 0)
@@ -51,7 +59,16 @@ int main()
 
         if(0 == strcmp(received_msg, PING_COMMAND))
         {
-            if(send(client_file_descriptor, HARDCODED_SYSTEM_STATS, MSG_BUF_SIZE, 0) < 0)
+            char sent_msg[MSG_BUF_SIZE];
+            int gas_sensor_value = 0;
+            int tmp_sensor_value = 0;
+
+            ble_get_sensor_value(BLE_MAC_ESP32_GAS_SENSOR, gas_sensor_value_handle, &gas_sensor_value);
+            ble_get_sensor_value(BLE_MAC_ESP32_TMP_SENSOR, tmp_sensor_value_handle, &tmp_sensor_value);
+
+            sprintf(sent_msg, "Gas Value: %d, Temperature Value: %d.%d'C", gas_sensor_value, tmp_sensor_value * 10, tmp_sensor_value % 10);
+
+            if(send(client_file_descriptor, sent_msg, MSG_BUF_SIZE, 0) < 0)
             {
                 printf("Could not send data to client\n");
             }
