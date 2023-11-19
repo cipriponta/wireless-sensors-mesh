@@ -21,7 +21,6 @@ do                                              \
 #define CHUNK_BUF_SIZE              (128)
 #define MSG_BUF_SIZE                (128)
 #define PING_COMMAND                "ping"
-#define HARDCODED_SYSTEM_STATS      "Temperature: 21.5'C, Gas: 0.0"
 
 #define PING_COMMAND        "ping"
 

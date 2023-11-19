@@ -1,5 +1,17 @@
 #include "socket_helpers.h"
 #include "ble_driver.h"
+#include <pigpio.h>
+
+#define GAS_SENSOR_VALUE_THRESHOLD      (1000)
+#define TMP_SENSOR_VALUE_THRESHOLD      (300)
+#define FAN_GPIO_PIN                    (12)
+
+typedef struct 
+{
+    int tmp_sensor_value;
+    int gas_sensor_value;
+    uint8_t fan_state;
+}system_output_t;
 
 int main()
 {
@@ -11,6 +23,12 @@ int main()
 
     int gas_sensor_value_handle = 0;
     int tmp_sensor_value_handle = 0;
+
+    if(gpioInitialise() < 0)
+    {
+        PRINT_ERROR_AND_EXIT("Could not init GPIO");
+    }
+    gpioSetMode(FAN_GPIO_PIN, PI_OUTPUT);
 
     ble_get_sensor_value_char_handle(BLE_MAC_ESP32_GAS_SENSOR, BLE_SENSOR_VALUE_UUID, &gas_sensor_value_handle);
     printf("BLE Gas Sensor Handle: %d\n", gas_sensor_value_handle);
@@ -60,13 +78,22 @@ int main()
         if(0 == strcmp(received_msg, PING_COMMAND))
         {
             char sent_msg[MSG_BUF_SIZE];
-            int gas_sensor_value = 0;
-            int tmp_sensor_value = 0;
+            system_output_t system_output = {0};
 
-            ble_get_sensor_value(BLE_MAC_ESP32_GAS_SENSOR, gas_sensor_value_handle, &gas_sensor_value);
-            ble_get_sensor_value(BLE_MAC_ESP32_TMP_SENSOR, tmp_sensor_value_handle, &tmp_sensor_value);
+            ble_get_sensor_value(BLE_MAC_ESP32_GAS_SENSOR, gas_sensor_value_handle, &system_output.gas_sensor_value);
+            ble_get_sensor_value(BLE_MAC_ESP32_TMP_SENSOR, tmp_sensor_value_handle, &system_output.tmp_sensor_value);
 
-            sprintf(sent_msg, "Gas Value: %d, Temperature Value: %d.%d'C", gas_sensor_value, tmp_sensor_value * 10, tmp_sensor_value % 10);
+            if(system_output.gas_sensor_value >= GAS_SENSOR_VALUE_THRESHOLD ||
+               system_output.tmp_sensor_value >= TMP_SENSOR_VALUE_THRESHOLD)
+            {
+                system_output.fan_state = 1;
+            }
+            gpioPWM(FAN_GPIO_PIN, system_output.fan_state);
+
+            sprintf(sent_msg, "Gas Value: %04d, Temperature Value: %d.%d'C, Fan State: %d", 
+                    system_output.gas_sensor_value, 
+                    system_output.tmp_sensor_value / 10, system_output.tmp_sensor_value % 10,
+                    system_output.fan_state);
 
             if(send(client_file_descriptor, sent_msg, MSG_BUF_SIZE, 0) < 0)
             {
@@ -81,5 +108,6 @@ int main()
 
     close(client_file_descriptor);
     shutdown(server_file_descriptor, SHUT_RDWR);
+    gpioTerminate();
     return 0;
 }
