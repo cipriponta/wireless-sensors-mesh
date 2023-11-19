@@ -1,7 +1,5 @@
-## Components
-1. PC-GUI (Currently PC-CLI)
-    - Convert PC-CLI to PC-GUI 
-2. RPI-GW
-    - Secure the BLE connection between RPI-GW and the ESP-32 components
-    - Secure the TCP connection between PC-GUI and RPI-GW
-3. ESP32-SENSORS
+## TODO
+1. Encrypt the BLE connection -> add bonding and pairing. Use bluetoothctl instead of the gatttool
+2. Add the PC-GUI component
+3. Use openssl for the TCP sockets to secure them
+4. Turn RPI into an access point
