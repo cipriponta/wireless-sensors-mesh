@@ -1,9 +1,7 @@
 /rpi-gw/out
 /pc-cli/out
+
 /.vscode
 
-/esp32-tmp/build/*
-/esp32-gas/build/*
-/gatt_security_server/build/*
-
+**/build*
 **/settings.json*
