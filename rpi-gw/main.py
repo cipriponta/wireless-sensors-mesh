@@ -1,28 +1,30 @@
-from bluepy.btle import Peripheral, Scanner
+from bluepy.btle import Peripheral
 import time
-import os
-import subprocess
+
+ESP32_GAS_BLE_MAC = "78:e3:6d:19:43:1a"
+ESP32_TMP_BLE_MAC = "a8:42:e3:48:32:2e"
+CHARACTERISTIC_NAME = "ffcd"
+
+def read_characteristics(device):
+    characteristics = device.getCharacteristics()
+
+    for characteristic in characteristics:
+        if CHARACTERISTIC_NAME == characteristic.uuid.getCommonName() and characteristic.supportsRead():
+            print("Value: {0}".format(characteristic.read().hex()))
+            print()
 
 if __name__ == "__main__":
-    device = Peripheral("78:e3:6d:19:43:1a")
+    gas_sensor = Peripheral(ESP32_GAS_BLE_MAC)
+    tmp_sensor = Peripheral(ESP32_TMP_BLE_MAC)
 
     try:
         while True:
-            characteristics = device.getCharacteristics()
-
-            for characteristic in characteristics:
-                print("Handle: {0}, UUID: {1}, UUID Name: {2}".format(
-                    characteristic.handle, 
-                    characteristic.uuid.binVal.hex(),
-                    characteristic.uuid.getCommonName()), end="")
-                
-                if characteristic.supportsRead():
-                    print(", Value: {0}".format(characteristic.read().hex()), end="")
-                print()
-
-            time.sleep(2)
-            print()
+            read_characteristics(gas_sensor)
+            read_characteristics(tmp_sensor)
+            time.sleep(1)
+            
     except Exception as exception:
         print("Exception:", exception)
     finally:
-        device.disconnect()
+        gas_sensor.disconnect()
+        tmp_sensor.disconnect()
