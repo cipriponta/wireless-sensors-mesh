@@ -1,5 +1,7 @@
-from bluepy.btle import Peripheral
+from bluepy.btle import Peripheral, Scanner
 import time
+import os
+import subprocess
 
 if __name__ == "__main__":
     device = Peripheral("78:e3:6d:19:43:1a")
