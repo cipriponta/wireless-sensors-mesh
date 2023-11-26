@@ -111,6 +111,24 @@ void ble_init(ble_driver_cfg_t *ble_cfg)
     ESP_ERROR_CHECK(esp_ble_gap_register_callback(gap_event_handler));
     ESP_ERROR_CHECK(esp_ble_gatts_app_register(ble_cfg->gatts_profile_id));
     ESP_ERROR_CHECK(esp_ble_gatt_set_local_mtu(512));
+
+    esp_ble_auth_req_t auth_req = ESP_LE_AUTH_REQ_SC_MITM_BOND;
+    esp_ble_io_cap_t io_cap = ESP_IO_CAP_NONE;
+    uint8_t key_size = 16;
+    uint8_t init_key = ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK;
+    uint8_t rsp_key = ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK;
+    uint32_t passkey = 123456;
+    uint8_t auth_option = ESP_BLE_ONLY_ACCEPT_SPECIFIED_AUTH_DISABLE;
+    uint8_t oob_support = ESP_BLE_OOB_DISABLE;
+
+    ESP_ERROR_CHECK(esp_ble_gap_set_security_param(ESP_BLE_SM_AUTHEN_REQ_MODE, &auth_req, sizeof(auth_req)));
+    ESP_ERROR_CHECK(esp_ble_gap_set_security_param(ESP_BLE_SM_IOCAP_MODE, &io_cap, sizeof(io_cap)));
+    ESP_ERROR_CHECK(esp_ble_gap_set_security_param(ESP_BLE_SM_MAX_KEY_SIZE, &key_size, sizeof(key_size)));
+    ESP_ERROR_CHECK(esp_ble_gap_set_security_param(ESP_BLE_SM_SET_INIT_KEY, &init_key, sizeof(init_key)));
+    ESP_ERROR_CHECK(esp_ble_gap_set_security_param(ESP_BLE_SM_SET_RSP_KEY, &rsp_key, sizeof(rsp_key)));
+    ESP_ERROR_CHECK(esp_ble_gap_set_security_param(ESP_BLE_SM_SET_STATIC_PASSKEY, &passkey, sizeof(passkey)));
+    ESP_ERROR_CHECK(esp_ble_gap_set_security_param(ESP_BLE_SM_ONLY_ACCEPT_SPECIFIED_SEC_AUTH, &auth_option, sizeof(auth_option)));
+    ESP_ERROR_CHECK(esp_ble_gap_set_security_param(ESP_BLE_SM_OOB_SUPPORT, &oob_support, sizeof(oob_support)));
 }
 
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
@@ -130,6 +148,19 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
             {
                 esp_ble_gap_start_advertising(&adv_params);
             }
+            break;
+        case ESP_GAP_BLE_AUTH_CMPL_EVT:
+            ESP_LOGI(BLE_LOG_TAG, "Auth complete, remote: %02x:%02x:%02x:%02x:%02x:%02x, pair status: %s",
+                     param->ble_security.auth_cmpl.bd_addr[0],
+                     param->ble_security.auth_cmpl.bd_addr[1],
+                     param->ble_security.auth_cmpl.bd_addr[2],
+                     param->ble_security.auth_cmpl.bd_addr[3],
+                     param->ble_security.auth_cmpl.bd_addr[4],
+                     param->ble_security.auth_cmpl.bd_addr[5],
+                     param->ble_security.auth_cmpl.success ? "success" : "fail");
+            break;
+        case ESP_GAP_BLE_SEC_REQ_EVT:
+            esp_ble_gap_security_rsp(param->ble_security.ble_req.bd_addr, true);
             break;
         default:
             break;
@@ -186,6 +217,7 @@ static void gatts_profile_sensor_event_handler(esp_gatts_cb_event_t event, esp_g
                     param->connect.remote_bda[4],  
                     param->connect.remote_bda[5]);
 
+            ESP_ERROR_CHECK(esp_ble_set_encryption(param->connect.remote_bda, ESP_BLE_SEC_ENCRYPT_MITM));
             ESP_ERROR_CHECK(esp_ble_gap_update_conn_params(&conn_params));
             break;
         }
@@ -207,7 +239,7 @@ static void gatts_profile_sensor_event_handler(esp_gatts_cb_event_t event, esp_g
             ESP_ERROR_CHECK(esp_ble_gatts_start_service(gatts_profile_instance.service_handle));
             ESP_ERROR_CHECK(esp_ble_gatts_add_char(gatts_profile_instance.service_handle, 
                                                     &gatts_profile_instance.char_uuid, 
-                                                    ESP_GATT_PERM_READ, 
+                                                    ESP_GATT_PERM_READ_ENCRYPTED, 
                                                     ESP_GATT_CHAR_PROP_BIT_READ, 
                                                     &gatts_char_value,
                                                     NULL));
