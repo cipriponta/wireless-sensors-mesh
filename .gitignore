@@ -2,3 +2,7 @@
 
 **/build*
 **/settings.json*
+
+pc-gui/.vs
+pc-gui/pc-gui/bin
+pc-gui/pc-gui/obj
