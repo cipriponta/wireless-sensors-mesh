@@ -25,6 +25,7 @@ def gpio_init():
     GPIO.setup(FAN_PWN_PIN, GPIO.OUT)
 
 def gpio_clean():
+    GPIO.output(FAN_PWN_PIN, GPIO.LOW)
     GPIO.cleanup()
 
 def gpio_manage_fan(fan_state):
